@@ -36,7 +36,7 @@ function! s:filename_map(prefix, file) abort
         \ }
 endfunction
 
-function! s:ExtractFinalWord(typed)
+function! s:extract_final_word(typed)
     " Get the current line and strip leading whitespace
     let l:currentLine = substitute(a:typed, '^\s*', '', '')
 
@@ -56,7 +56,7 @@ function! asyncomplete#sources#file#completor(opt, ctx)
   let l:typed = a:ctx['typed']
   let l:col   = a:ctx['col']
 
-  let l:keyword =  s:ExtractFinalWord(l:typed)
+  let l:keyword =  s:extract_final_word(l:typed)
   let l:keyword_len = len(l:keyword)
 
 	call asyncomplete#log("file-debug", "file#completor", "l:typed=" . l:typed .  "  l:keyword="  . l:keyword)
