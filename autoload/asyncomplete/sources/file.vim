@@ -1,3 +1,20 @@
+let s:forbidden_patterns = [
+\ '/*', '*/',
+\ '</',
+\ 'http:', 'https', 'ftp://', 'sftp://', 'scp://',
+\ '/net',
+\]
+
+function! s:check_forbidden_patterns(string)
+  for l:pattern in s:forbidden_patterns
+    if matchstr(a:string, l:pattern) == l:pattern
+      return 1
+    endif
+  endfor
+  return 0
+endfunction
+
+" Maps available filenames to type (file vs dir)
 function! s:filename_map(prefix, file) abort
   let l:abbr = fnamemodify(a:file, ':t')
   let l:word = a:prefix . l:abbr
@@ -19,48 +36,73 @@ function! s:filename_map(prefix, file) abort
         \ }
 endfunction
 
+" Asymcomplete calls this for reach completion
 function! asyncomplete#sources#file#completor(opt, ctx)
   let l:bufnr = a:ctx['bufnr']
   let l:typed = a:ctx['typed']
   let l:col   = a:ctx['col']
 
-  let l:kw    = matchstr(l:typed, '<\@<!\(\.\{0,2}/\|\~\).*$')
-  let l:kwlen = len(l:kw)
+  let l:keyword = substitute(l:typed, '\s\+','','g')  " strip whitespace
+  let l:keyword_len = len(l:keyword)
 
-  if l:kwlen < 1
+	let l:sep = '/'
+  if has('win32')
+		let l:sep = '\\'
+	endif
+
+  if l:keyword_len < 1
     return
   endif
 
-  if l:kw !~ '^\(/\|\~\)'
-    let l:cwd = expand('#' . l:bufnr . ':p:h') . '/' . l:kw
+	" Check for potentially deliterious patterns
+  if s:check_forbidden_patterns(l:keyword)
+		return
+  endif
+
+	" if the path is not absolute (/) or $HOME paths (~), convert it to absolute
+  if l:keyword !~ '^\(/\|\~\)'
+		let l:absolute_filepath = expand('#' . l:bufnr . ':p:h') . l:sep . l:keyword
   else
-    let l:cwd = l:kw
+    let l:absolute_filepath = l:keyword
   endif
 
   if has('win32')
-    let l:glob = fnamemodify(l:cwd, ':t') . '*'
+    let l:glob = fnamemodify(l:absolute_filepath, ':t') . '*'
   else
-    let l:glob = fnamemodify(l:cwd, ':t') . '.\=[^.]*'
+    let l:glob = fnamemodify(l:absolute_filepath, ':t') . '.\=[^.]*'
   endif
-  let l:cwd  = fnamemodify(l:cwd, ':p:h')
-  let l:pre  = fnamemodify(l:kw, ':h')
+  let l:search_root  = fnamemodify(l:absolute_filepath, ':p:h')
 
-  if l:pre !~ '/$'
-    let l:pre = l:pre . '/'
-  endif
+  let l:search_prefix  = fnamemodify(l:keyword, ':h')
+	let l:result_prefix = l:search_prefix
 
-  let l:cwdlen   = strlen(l:cwd)
-  let l:startcol = l:col - l:kwlen
-  let l:files    = split(globpath(l:cwd, l:glob), '\n')
-  let l:matches  = map(l:files, {key, val -> s:filename_map(l:pre, val)})
-  let l:matches  = sort(l:matches, function('s:sort'))
+	" If the file search did not start with ., then leave it out in the
+	" completion.  Set result_prefix to blank
+	if l:result_prefix == '.' && l:keyword !~ '^\.'
+		let l:result_prefix = ''
+	endif
 
-  call asyncomplete#complete(a:opt['name'], a:ctx, l:startcol, l:matches)
+	" Append a / to the result prefix if it's not blank
+	if !empty(l:result_prefix)
+		let l:result_prefix = l:result_prefix . l:sep
+	endif
+
+	" Get the list of file
+	"  map each file name to its filetype info
+	"  and sort
+  let l:files    = split(globpath(l:search_root, l:glob), '\n')
+  let l:unsorted_matches  = map(l:files, {key, val -> s:filename_map(l:result_prefix, val)})
+  let l:matches  = sort(l:unsorted_matches, function('s:sort'))
+
+	" use the completion engine to display the found files at the correct
+	" location
+  call asyncomplete#complete(a:opt['name'], a:ctx, l:col - l:keyword_len, l:matches)
 endfunction
 
 function! asyncomplete#sources#file#get_source_options(opts)
   return extend(extend({}, a:opts), {
-        \ 'triggers': {'*': ['/']},
+        \ 'name': 'file',
+				\ 'triggers': {'*': ['\.','\.\','/']}
         \ })
 endfunction
 
@@ -74,3 +116,5 @@ function! s:sort(item1, item2) abort
   return 0
 endfunction
 
+
+" vim: set ts=2 sts=2 noet sw=2 :
