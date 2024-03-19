@@ -36,14 +36,30 @@ function! s:filename_map(prefix, file) abort
         \ }
 endfunction
 
+function! s:ExtractFinalWord(typed)
+    " Get the current line and strip leading whitespace
+    let l:currentLine = substitute(a:typed, '^\s*', '', '')
+
+	" Use an optimized regex to directly capture the final word, excluding preceding characters
+    " This regex looks for the last segment of alphanumerics, hyphens, or underscores that follow
+    " any non-word character or start of line, without including the delimiter in the match.
+    let l:pattern = '\v(\s|''|"|[{(<]^)\zs(\w|[-_])+$'
+    let l:finalWord = matchstr(l:currentLine, l:pattern)
+
+    " Return the final word
+    return l:finalWord
+endfunction
+
 " Asymcomplete calls this for reach completion
 function! asyncomplete#sources#file#completor(opt, ctx)
   let l:bufnr = a:ctx['bufnr']
   let l:typed = a:ctx['typed']
   let l:col   = a:ctx['col']
 
-  let l:keyword = substitute(l:typed, '\s\+','','g')  " strip whitespace
+  let l:keyword =  s:ExtractFinalWord(l:typed)
   let l:keyword_len = len(l:keyword)
+
+	call asyncomplete#log("file-debug", "file#completor", "l:typed=" . l:typed .  "  l:keyword="  . l:keyword)
 
   let l:sep = '/'
   if has('win32')
