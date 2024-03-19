@@ -45,23 +45,23 @@ function! asyncomplete#sources#file#completor(opt, ctx)
   let l:keyword = substitute(l:typed, '\s\+','','g')  " strip whitespace
   let l:keyword_len = len(l:keyword)
 
-	let l:sep = '/'
+  let l:sep = '/'
   if has('win32')
-		let l:sep = '\\'
-	endif
+    let l:sep = '\\'
+  endif
 
   if l:keyword_len < 1
     return
   endif
 
-	" Check for potentially deliterious patterns
+  " Check for potentially deliterious patterns
   if s:check_forbidden_patterns(l:keyword)
-		return
+    return
   endif
 
-	" if the path is not absolute (/) or $HOME paths (~), convert it to absolute
+  " if the path is not absolute (/) or $HOME paths (~), convert it to absolute
   if l:keyword !~ '^\(/\|\~\)'
-		let l:absolute_filepath = expand('#' . l:bufnr . ':p:h') . l:sep . l:keyword
+    let l:absolute_filepath = expand('#' . l:bufnr . ':p:h') . l:sep . l:keyword
   else
     let l:absolute_filepath = l:keyword
   endif
@@ -74,35 +74,35 @@ function! asyncomplete#sources#file#completor(opt, ctx)
   let l:search_root  = fnamemodify(l:absolute_filepath, ':p:h')
 
   let l:search_prefix  = fnamemodify(l:keyword, ':h')
-	let l:result_prefix = l:search_prefix
+  let l:result_prefix = l:search_prefix
 
-	" If the file search did not start with ., then leave it out in the
-	" completion.  Set result_prefix to blank
-	if l:result_prefix == '.' && l:keyword !~ '^\.'
-		let l:result_prefix = ''
-	endif
+  " If the file search did not start with ., then leave it out in the
+  " completion.  Set result_prefix to blank
+  if l:result_prefix == '.' && l:keyword !~ '^\.'
+    let l:result_prefix = ''
+  endif
 
-	" Append a / to the result prefix if it's not blank
-	if !empty(l:result_prefix)
-		let l:result_prefix = l:result_prefix . l:sep
-	endif
+  " Append a / to the result prefix if it's not blank
+  if !empty(l:result_prefix)
+    let l:result_prefix = l:result_prefix . l:sep
+  endif
 
-	" Get the list of file
-	"  map each file name to its filetype info
-	"  and sort
+  " Get the list of file
+  "  map each file name to its filetype info
+  "  and sort
   let l:files    = split(globpath(l:search_root, l:glob), '\n')
   let l:unsorted_matches  = map(l:files, {key, val -> s:filename_map(l:result_prefix, val)})
   let l:matches  = sort(l:unsorted_matches, function('s:sort'))
 
-	" use the completion engine to display the found files at the correct
-	" location
+  " use the completion engine to display the found files at the correct
+  " location
   call asyncomplete#complete(a:opt['name'], a:ctx, l:col - l:keyword_len, l:matches)
 endfunction
 
 function! asyncomplete#sources#file#get_source_options(opts)
   return extend(extend({}, a:opts), {
         \ 'name': 'file',
-				\ 'triggers': {'*': ['\.','\.\','/']}
+        \ 'triggers': {'*': ['\.','\.\','/']}
         \ })
 endfunction
 
@@ -115,6 +115,5 @@ function! s:sort(item1, item2) abort
   endif
   return 0
 endfunction
-
 
 " vim: set ts=2 sts=2 noet sw=2 :
