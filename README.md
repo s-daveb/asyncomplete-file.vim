@@ -5,7 +5,7 @@ Filename completion source for [asyncomplete.vim](https://github.com/prabirshres
 ## Installing
 
 ```vim
-Plug 's-daveb/asyncomplete.vim'
+Plug 'prabirshrestha/asyncomplete.vim'
 Plug 's-daveb/asyncomplete-file.vim'
 ```
 
