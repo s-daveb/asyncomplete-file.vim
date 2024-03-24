@@ -5,6 +5,15 @@ let s:forbidden_patterns = [
 \ '/net',
 \]
 
+let s:async_file_debug = 1
+
+function! s:debug_print(function, string)
+	if s:async_file_debug != 0
+		call asyncomplete#log("file-debug", a:function, a:string)
+	endif
+endfunction
+
+
 function! s:check_forbidden_patterns(string)
   for l:pattern in s:forbidden_patterns
     if matchstr(a:string, l:pattern) == l:pattern
@@ -38,14 +47,18 @@ endfunction
 
 function! s:extract_final_word(typed)
     " Get the current line and strip leading whitespace
-    let l:currentLine = substitute(a:typed, '^\s*', '', '')
+    let l:currentLine = substitute(a:typed, '^\s*', '', 'g')
+
+		call s:debug_print("extract_final_word", "l:currentLine: " . l:currentLine)
 
 	" Use an optimized regex to directly capture the final word, excluding preceding characters
     " This regex looks for the last segment of alphanumerics, hyphens, or underscores that follow
     " any non-word character or start of line, without including the delimiter in the match.
-    let l:pattern = '\v(\s|''|"|[{(<]^)\zs(\w|[-_])+$'
+    "let l:pattern = '\v(\s|''|"|[|{|(|<|]^)\zs(\w|[-_])+$'
+		let l:pattern = '\v^([^(\[{<]*)(\(|\[|\{|<|<\/)?([^\]\)}>]*)'
     let l:finalWord = matchstr(l:currentLine, l:pattern)
 
+		call s:debug_print("extract_final_word", "l:finalWord: " . l:finalWord)
     " Return the final word
     return l:finalWord
 endfunction
@@ -59,7 +72,7 @@ function! asyncomplete#sources#file#completor(opt, ctx)
   let l:keyword =  s:extract_final_word(l:typed)
   let l:keyword_len = len(l:keyword)
 
-	call asyncomplete#log("file-debug", "file#completor", "l:typed=" . l:typed .  "  l:keyword="  . l:keyword)
+	call s:debug_print( "asycomplete#sources#file#completor", "l:typed=" . l:typed .  "  l:keyword="  . l:keyword)
 
   let l:sep = '/'
   if has('win32')
