@@ -46,21 +46,21 @@ function! s:filename_map(prefix, file) abort
 endfunction
 
 function! s:extract_final_word(typed)
-    " Get the current line and strip leading whitespace
-    let l:currentLine = substitute(a:typed, '^\s*', '', 'g')
+	" Get the current line and strip leading whitespace
+	let l:currentLine = substitute(a:typed, '^\s*', '', 'g')
 
-		call s:debug_print("extract_final_word", "l:currentLine: " . l:currentLine)
+	call s:debug_print("extract_final_word", "l:currentLine: " . l:currentLine)
 
 	" Use an optimized regex to directly capture the final word, excluding preceding characters
-    " This regex looks for the last segment of alphanumerics, hyphens, or underscores that follow
-    " any non-word character or start of line, without including the delimiter in the match.
-    "let l:pattern = '\v(\s|''|"|[|{|(|<|]^)\zs(\w|[-_])+$'
-		let l:pattern = '\v^([^(\[{<]*)(\(|\[|\{|<|<\/)?([^\]\)}>]*)'
-    let l:finalWord = matchstr(l:currentLine, l:pattern)
+	" This regex looks for the last segment of alphanumerics, hyphens, or underscores that follow
+	" any non-word character or start of line, without including the delimiter in the match.
+	"let l:pattern = '\v(\s|''|"|[|{|(|<|]^)\zs(\w|[-_])+$'
+	let l:pattern = '\v^([^(\[{<]*)(\(|\[|\{|<|<\/)?([^\]\)}>]*)'
+	let l:finalWord = matchstr(l:currentLine, l:pattern)
 
-		call s:debug_print("extract_final_word", "l:finalWord: " . l:finalWord)
-    " Return the final word
-    return l:finalWord
+	call s:debug_print("extract_final_word", "l:finalWord: " . l:finalWord)
+	" Return the final word
+	return l:finalWord
 endfunction
 
 " Asymcomplete calls this for reach completion
